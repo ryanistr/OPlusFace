@@ -28,7 +28,7 @@ public class FacePPImpl {
             long res = FaceUnlockVendorImpl.getInstance().initAllWithPath(PANORAMA_PATH, "", MODEL_PATH);
             
             if (res == 0) {
-                Log.i(TAG, "FacePPImpl: init success");
+                Log.i(TAG, "FacePPImpl: Initialized successfully");
                 restoreFeature(); 
                 mIsInit = true;
             }
@@ -38,10 +38,8 @@ public class FacePPImpl {
     public void restoreFeature() {
         FaceUnlockVendorImpl.getInstance().prepare();
         int restoredCount = FaceUnlockVendorImpl.getInstance().restoreFeature();
-        
-        // SYNC FIX: If file is missing, ignore what engine says and force 0.
         if (!isFeatureFilePresent()) {
-            Log.w(TAG, "restoreFeature: Engine claims " + restoredCount + " but file missing. Forcing 0.");
+            Log.w(TAG, "restoreFeature: recieved vendor code:" + restoredCount + " no face is restored.");
             mFaceCount = 0;
         } else {
             mFaceCount = restoredCount;
@@ -49,11 +47,7 @@ public class FacePPImpl {
         
         FaceUnlockVendorImpl.getInstance().reset();
     }
-
-    // BUG FIX 1 & 2: Strict File Check
-    // This prevents "Zombie" faces. If the file is gone, you have no face.
     public boolean hasEnrolledFaces() {
-        // Always check physical file existence
         return isFeatureFilePresent();
     }
 
@@ -87,22 +81,16 @@ public class FacePPImpl {
         FaceUnlockVendorImpl.getInstance().setDetectArea(left, top, right, bottom);
     }
     
-    // BUG FIX 1: Robust Deletion
     public void deleteFeature(int id) {
         Log.w(TAG, "deleteFeature: " + id);
-        
-        // 1. Clear Engine
         FaceUnlockVendorImpl.getInstance().deleteFeature(id);
         mFaceCount = 0;
-        
-        // 2. Brutal File Deletion (The Engine sometimes fails to delete the file)
         try {
             File dir = new File(DATA_PATH);
             if (dir.exists() && dir.isDirectory()) {
                 File[] files = dir.listFiles();
                 if (files != null) {
                     for (File f : files) {
-                        // Delete specific database files
                         if (f.getName().startsWith("restore_") || f.getName().startsWith("feature")) {
                             boolean deleted = f.delete();
                             Log.i(TAG, "Physically deleted: " + f.getName() + " Success=" + deleted);
@@ -111,7 +99,7 @@ public class FacePPImpl {
                 }
             }
         } catch (Exception e) {
-            Log.e(TAG, "Failed to delete files", e);
+            Log.e(TAG, "Failed to delete face", e);
         }
     }
 }

@@ -16,21 +16,18 @@ public class CameraUtil {
         List<Camera.Size> supportedPreviewSizes = parameters.getSupportedPreviewSizes();
         if (supportedPreviewSizes == null) return null;
 
-        // 1. Look for exact match
         for (Camera.Size size : supportedPreviewSizes) {
             if (size.width == width && size.height == height) return size;
         }
 
-        // 2. Look for square (1:1) if width==height requested
         if (width == height) {
             for (Camera.Size size : supportedPreviewSizes) {
                 if (size.width == size.height && size.width >= 400) {
-                    return size; // Found a decent square resolution
+                    return size;
                 }
             }
         }
 
-        // 3. Fallback: Sort by area
         Collections.sort(supportedPreviewSizes, (lhs, rhs) -> 
             (lhs.width * lhs.height) - (rhs.width * rhs.height));
 

@@ -1,5 +1,5 @@
 package ax.nd.faceunlock;
-
+// DO NOT DELETE THIS FILE OR MODIFY - USED BY NATIVE CODE
 public class FaceConstants {
     public static final int MG_UNLOCK_ATTR_EYE_CLOSE = 22;
     public static final int MG_UNLOCK_COMPARE_FAILURE = 12;

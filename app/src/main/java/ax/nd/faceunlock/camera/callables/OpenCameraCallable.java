@@ -3,7 +3,7 @@ package ax.nd.faceunlock.camera.callables;
 import android.hardware.Camera;
 import android.util.Log;
 
-import ax.nd.faceunlock.camera.CameraRepository; // Updated Import
+import ax.nd.faceunlock.camera.CameraRepository;
 import ax.nd.faceunlock.camera.listeners.CameraListener;
 import ax.nd.faceunlock.camera.listeners.ErrorCallbackListener;
 
@@ -20,11 +20,9 @@ public class OpenCameraCallable extends CameraCallable {
     @Override
     public void run() {
         try {
-            // Use CameraRepository instead of CameraHandlerThread
             CameraRepository.CameraData cameraData = getCameraData();
             
             if (cameraData.mCamera != null) {
-                // Close existing if open
                 cameraData.mCamera.release();
                 cameraData.mCamera = null;
             }

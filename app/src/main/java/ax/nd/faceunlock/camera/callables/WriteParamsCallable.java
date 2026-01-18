@@ -14,7 +14,6 @@ public class WriteParamsCallable extends CameraCallable {
         Camera camera = getCameraData().mCamera;
         if (camera != null) {
             try {
-                // Use stored parameters from CameraData
                 Camera.Parameters params = getCameraData().mParameters;
                 if (params != null) {
                     camera.setParameters(params);

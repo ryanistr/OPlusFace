@@ -1,5 +1,5 @@
 package com.megvii.facepp.sdk;
-
+// DO NOT DELETE THIS FILE - USED BY NATIVE CODE
 import android.annotation.TargetApi;
 import android.media.Image;
 import android.os.Environment;

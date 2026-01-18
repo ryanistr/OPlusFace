@@ -46,12 +46,10 @@ public class CameraService {
         getInstance().addCallable(new CloseCameraCallable(cameraListener));
     }
 
-    // [NEW] Combined Configuration and Start
     public static void configureAndStartPreview(Surface surface, CameraListener cameraListener) {
         getInstance().addCallable(new ConfigureAndStartPreviewCallable(surface, cameraListener));
     }
 
-    // Standard hooks (keep existing)
     public static void startPreview(CameraListener cameraListener) {
         try {
             if (FaceAuthBridge.getInstance() != null) {

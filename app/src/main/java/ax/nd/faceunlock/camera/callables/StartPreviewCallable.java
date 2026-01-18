@@ -38,8 +38,6 @@ public class StartPreviewCallable extends CameraCallable {
             Camera camera = getCameraData().mCamera;
             if (camera != null) {
                 if (mSurface != null) {
-                    // Reflection: camera.setPreviewSurface(Surface)
-                    // This method is hidden but available in system_server
                     try {
                         Method setPreviewSurface = camera.getClass().getMethod("setPreviewSurface", Surface.class);
                         setPreviewSurface.invoke(camera, mSurface);

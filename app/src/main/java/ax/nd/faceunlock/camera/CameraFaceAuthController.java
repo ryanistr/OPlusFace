@@ -25,7 +25,6 @@ public class CameraFaceAuthController {
     private ServiceCallback mCallback;
     private boolean mIsAuthenticating = false;
 
-    // We target 640x480 directly from hardware
     private int mWidth = 640;
     private int mHeight = 480;
 
@@ -63,10 +62,8 @@ public class CameraFaceAuthController {
                 if (value instanceof Camera) {
                     Camera camera = (Camera) value;
                     
-                    // 1. Optimize Camera Parameters (Hardware Scaling)
                     setupCameraParameters(camera);
 
-                    // 2. Start Preview
                     CameraService.startPreview(dummySurface, new CameraListener() {
                         @Override
                         public void onComplete(Object value) {
@@ -94,18 +91,15 @@ public class CameraFaceAuthController {
             Camera.Parameters params = camera.getParameters();
             List<Camera.Size> supported = params.getSupportedPreviewSizes();
             
-            // Find closest size to 640x480
             Camera.Size bestSize = null;
             int minDiff = Integer.MAX_VALUE;
             
             if (supported != null) {
                 for (Camera.Size size : supported) {
-                    // Prefer 640x480 explicitly
                     if (size.width == 640 && size.height == 480) {
                         bestSize = size;
                         break;
                     }
-                    // Otherwise find closest pixel count match
                     int diff = Math.abs((size.width * size.height) - (640 * 480));
                     if (diff < minDiff) {
                         minDiff = diff;
@@ -121,10 +115,8 @@ public class CameraFaceAuthController {
                 Log.i(TAG, "Requested Camera Size: " + mWidth + "x" + mHeight);
             }
             
-            // Ensure standard format
             params.setPreviewFormat(ImageFormat.NV21);
             
-            // Apply parameters
             camera.setParameters(params);
             
         } catch (Exception e) {
@@ -134,7 +126,6 @@ public class CameraFaceAuthController {
 
     private void setupBufferedCallback(Camera camera) {
         try {
-            // Re-read params to be sure of what the hardware accepted
             Camera.Parameters params = camera.getParameters();
             Camera.Size size = params.getPreviewSize();
             mWidth = size.width;
@@ -143,8 +134,6 @@ public class CameraFaceAuthController {
             int format = params.getPreviewFormat();
             int bitsPerPixel = ImageFormat.getBitsPerPixel(format);
             int bufferSize = (mWidth * mHeight * bitsPerPixel) / 8;
-
-            // 3 Buffers for smooth pipeline
             camera.addCallbackBuffer(new byte[bufferSize]);
             camera.addCallbackBuffer(new byte[bufferSize]);
             camera.addCallbackBuffer(new byte[bufferSize]);
@@ -160,11 +149,8 @@ public class CameraFaceAuthController {
                             try {
                                 if (mCallback == null || !mIsAuthenticating) return;
 
-                                // ZERO PROCESSING: Pass raw hardware buffer to engine.
-                                // It is already 640x480 (or close to it).
                                 mCallback.handlePreviewData(data, mWidth, mHeight);
                                 
-                                // Return buffer to queue
                                 if (mIsAuthenticating && camera != null) {
                                     camera.addCallbackBuffer(data);
                                 }

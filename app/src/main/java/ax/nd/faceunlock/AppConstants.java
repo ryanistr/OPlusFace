@@ -1,5 +1,6 @@
 package ax.nd.faceunlock;
 
+// DO NOT DELETE THIS FILE OR MODIFY - USED BY NATIVE CODE
 public class AppConstants {
     public static final String EXTRA_KEY_CHALLENGE_TOKEN = "hw_auth_token";
     public static final String EXTRA_KEY_LAUNCHED_CONFIRM = "launched_confirm_lock";

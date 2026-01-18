@@ -59,15 +59,11 @@ public class Util {
     }
 
     public static boolean isByPassLockScreenAvailable(Context context) {
-        // TODO Allow customization on whether or not to skip lock screen
         return true;
-//        return !context.getResources().getBoolean(
-//                com.android.internal.R.bool.config_faceAuthOnlyOnSecurityView);
     }
 
     /**
-     * Sets a system property via reflection.
-     * Required for: persist.sys.oplus.isFaceEnrolled
+     * Sets a system property
      */
     public static void setSystemProperty(String key, String value) {
         try {

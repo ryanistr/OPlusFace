@@ -1,10 +1,9 @@
 package com.megvii.facepp.sdk.jni;
-
+// DO NOT DELETE THIS FILE - USED BY NATIVE CODE
 import com.megvii.facepp.sdk.Lite;
 
 public class LiteApi {
     static {
-        // Load libraries in this exact order
         System.loadLibrary("megface");
         System.loadLibrary("FaceDetectCA");
         System.loadLibrary("MegviiUnlock");

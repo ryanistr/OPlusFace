@@ -1,5 +1,5 @@
 package com.megvii.facepp.sdk;
-
+// DO NOT DELETE THIS FILE - USED BY NATIVE CODE
 import android.util.Log;
 import java.io.File;
 import java.io.FileInputStream;

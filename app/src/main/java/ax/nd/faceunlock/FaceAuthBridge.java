@@ -10,6 +10,8 @@ import ax.nd.faceunlock.vendor.FacePPImpl;
 import ax.nd.faceunlock.camera.CameraFaceEnrollController;
 import ax.nd.faceunlock.camera.CameraFaceAuthController;
 import ax.nd.faceunlock.camera.CameraService;
+import ax.nd.faceunlock.util.Util; // Added Import for Util
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -148,7 +150,8 @@ public class FaceAuthBridge {
                 if (mCurrentSteps <= 0) {
                     mCurrentSteps = 0;
                     mEnrollFinished = true;
-                    notifyEnrollResult(receiver, mPendingFaceId, userId, 0); 
+                    notifySystemUIonFaceChanged(true);
+                    notifyEnrollResult(receiver, mPendingFaceId, userId, 0);
                     stopEnrollControllerOnly();
                 } else {
                     notifyEnrollResult(receiver, 0, userId, mCurrentSteps); 
@@ -225,8 +228,10 @@ public class FaceAuthBridge {
     public void remove(final int userId, final int faceId, final Object receiver) {
         Log.d(TAG, "Removing Face ID: " + faceId);
         mHandler.post(() -> {
+            notifySystemUIonFaceChanged(false);
             mFacePP.deleteFeature(faceId); 
-            notifyRemoved(receiver, faceId, userId, 0); 
+            notifyRemoved(receiver, faceId, userId, 0);
+            
         });
     }
 
@@ -345,5 +350,16 @@ public class FaceAuthBridge {
             Method m = receiver.getClass().getMethod("onError", int.class, int.class);
             m.invoke(receiver, error, vendorCode);
         } catch (Exception e) {}
+    }
+
+    /**
+     * Updates persist.sys.oplus.isFaceEnrolled system property.
+     * 1 = Enrolled
+     * 0 = Not Enrolled / Removed
+     */
+    private void notifySystemUIonFaceChanged(boolean isEnrolled) {
+        String val = isEnrolled ? "1" : "0";
+        Util.setSystemProperty("persist.sys.oplus.isFaceEnrolled", val);
+        Log.i(TAG, "SystemUI Notified: persist.sys.oplus.isFaceEnrolled = " + val);
     }
 }
