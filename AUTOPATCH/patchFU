@@ -1,0 +1,167 @@
+#!/bin/bash
+dirnow=$PWD
+source $dirnow/faceunlock/patch
+debug=false
+if [[ -f $dirnow/.debug ]]; then
+    debug=true
+fi
+
+apkeditor() {
+    jarfile=$dirnow/tool/APKEditor.jar
+    javaOpts="-Xmx6056M -Dfile.encoding=utf-8 -Djdk.util.zip.disableZip64ExtraFieldValidation=true -Djdk.nio.zipfs.allowDotZipEntry=true"
+
+    java $javaOpts -jar "$jarfile" "$@"
+}
+
+expressions_fix() {
+	var=$1
+	escaped_var=$(printf '%s\n' "$var" | sed 's/[\/&]/\\&/g')
+	escaped_var=$(printf '%s\n' "$escaped_var" | sed 's/\[/\\[/g' | sed 's/\]/\\]/g' | sed 's/\./\\./g' | sed 's/;/\\;/g')
+	echo $escaped_var
+}
+
+patchservices() {
+    if [[ $1 == "" ]]; then
+        echo "okay bruh, wheres the .jar file?"
+        echo "Usage: $0 -j services.jar"
+        exit 1
+    fi
+    jarname=$1
+
+    echo "Decompiling ${jarname}..."
+    if [[ $debug == false ]]; then
+        apkeditor d -i $jarname -o tmp_jar > /dev/null 2>&1
+    elif [[ $debug == true ]]; then
+        apkeditor d -i $jarname -o tmp_jar
+    fi
+    mv $jarname tmp.jar
+
+    echo "Patching ${jarname}..."
+
+    local faceProviderclassfile=$(find tmp_jar/ -name 'FaceProvider.smali' -printf '%P\n')
+
+    local initSensMethod=$(expressions_fix "$(grep ' initSensors(' tmp_jar/$faceProviderclassfile)")
+    local cancelAuthMethod=$(expressions_fix "$(grep ' cancelAuthentication(' tmp_jar/$faceProviderclassfile)")
+    local cancelEnrollMethod=$(expressions_fix "$(grep ' cancelEnrollment(' tmp_jar/$faceProviderclassfile)")
+    local getAuthIDMethod=$(expressions_fix "$(grep ' getAuthenticatorId(' tmp_jar/$faceProviderclassfile)")
+    local getEnrolledFMethod=$(expressions_fix "$(grep ' getEnrolledFaces(' tmp_jar/$faceProviderclassfile)")
+    local isHwDetectMethod=$(expressions_fix "$(grep ' isHardwareDetected(' tmp_jar/$faceProviderclassfile)")
+    local schedAuthMethod=$(expressions_fix "$(grep ' scheduleAuthenticate(' tmp_jar/$faceProviderclassfile)")
+    local schedEnrollMethod=$(expressions_fix "$(grep ' scheduleEnroll(' tmp_jar/$faceProviderclassfile)")
+    local schedGenClgMethod=$(expressions_fix "$(grep ' scheduleGenerateChallenge(' tmp_jar/$faceProviderclassfile)")
+    local schedRMMethod=$(expressions_fix "$(grep ' scheduleRemove(' tmp_jar/$faceProviderclassfile)")
+    local schedRevClgMethod=$(expressions_fix "$(grep ' scheduleRevokeChallenge(' tmp_jar/$faceProviderclassfile)")
+    
+    sed -n "/^${initSensMethod}/,/^\.end method/p" tmp_jar/$faceProviderclassfile > tmp_initSens
+    sed -i "/^${initSensMethod}/,/^\.end method/d" tmp_jar/$faceProviderclassfile
+
+    sed -i "/^${cancelAuthMethod}/,/^\.end method/d" tmp_jar/$faceProviderclassfile
+    sed -i "/^${cancelEnrollMethod}/,/^\.end method/d" tmp_jar/$faceProviderclassfile
+    sed -i "/^${getAuthIDMethod}/,/^\.end method/d" tmp_jar/$faceProviderclassfile
+    sed -i "/^${getEnrolledFMethod}/,/^\.end method/d" tmp_jar/$faceProviderclassfile
+    sed -i "/^${isHwDetectMethod}/,/^\.end method/d" tmp_jar/$faceProviderclassfile
+    sed -i "/^${schedAuthMethod}/,/^\.end method/d" tmp_jar/$faceProviderclassfile
+    sed -i "/^${schedEnrollMethod}/,/^\.end method/d" tmp_jar/$faceProviderclassfile
+    sed -i "/^${schedGenClgMethod}/,/^\.end method/d" tmp_jar/$faceProviderclassfile
+    sed -i "/^${schedRMMethod}/,/^\.end method/d" tmp_jar/$faceProviderclassfile
+    sed -i "/^${schedRevClgMethod}/,/^\.end method/d" tmp_jar/$faceProviderclassfile
+
+    local initSensLine=$(expr $(grep -r ".line" tmp_initSens | head -n 1 | awk '{print $2}') - 1)
+    faceProvider_initSensors $initSensLine
+    echo "$faceProvider_initSensors" | sed -i '5r /dev/stdin' tmp_initSens
+
+    cat tmp_initSens >> tmp_jar/$faceProviderclassfile
+    rm -rf tmp_initSens
+
+    echo "$cancelAuth" >> tmp_jar/$faceProviderclassfile
+    echo "$cancelEnroll" >> tmp_jar/$faceProviderclassfile
+    echo "$getAuthID" >> tmp_jar/$faceProviderclassfile
+    echo "$getEnrolledF" >> tmp_jar/$faceProviderclassfile
+    echo "$isHwDetected" >> tmp_jar/$faceProviderclassfile
+    echo "$schedAuth" >> tmp_jar/$faceProviderclassfile
+    echo "$schedEnroll" >> tmp_jar/$faceProviderclassfile
+    echo "$schedGenClg" >> tmp_jar/$faceProviderclassfile
+    echo "$schedRM" >> tmp_jar/$faceProviderclassfile
+    echo "$schedRevClg" >> tmp_jar/$faceProviderclassfile
+
+    echo "Compiling ${jarname} classes.."
+    if [[ $debug == false ]]; then
+        apkeditor b -i tmp_jar > /dev/null 2>&1
+    elif [[ $debug == true ]]; then
+        apkeditor b -i tmp_jar
+    fi
+    unzip tmp_jar_out.apk 'classes*.dex' -d tmp_jar > /dev/null 2>&1
+
+    rm -rf tmp_jar/.cache
+    local patchclass=$(expr $(find tmp_jar/ -type f -name '*.dex' | wc -l) + 1)
+    cp faceunlock/classes.dex tmp_jar/classes${patchclass}.dex
+
+    cd tmp_jar
+    echo "Zipping classes..."
+    zip -qr0 -t 07302003 $dirnow/tmp.jar classes*
+    cd $dirnow
+    echo "Zipaligning ${jarname}..."
+    zipalign -v 4 tmp.jar $jarname > /dev/null
+    rm -rf tmp.jar tmp_jar tmp_jar_out.apk
+    echo "Done!"
+}
+
+patchsysui() {
+    if [[ $1 == "" ]]; then
+        echo "okay bruh, wheres the .apk file?"
+        echo "Usage: $0 -a SystemUI.apk"
+        exit 1
+    fi
+    apkname=$1
+
+    echo "Decompiling ${apkname}..."
+    if [[ $debug == false ]]; then
+        apkeditor d -i $apkname -o tmp_apk > /dev/null 2>&1
+    elif [[ $debug == true ]]; then
+        apkeditor d -i $apkname -o tmp_apk
+    fi
+	mv $apkname tmp.apk
+
+    echo "Patching ${apkname}..."
+    local authCtrlclassfile=$(find tmp_apk/ -name 'AuthController.smali' -printf '%P\n')
+    local faceEnrollStateMethod=$(expressions_fix "$(grep ' isFaceAuthEnrolled(' tmp_apk/$authCtrlclassfile)")
+    sed -i "/^${faceEnrollStateMethod}/,/^\.end method/d" tmp_apk/$authCtrlclassfile
+    echo "$faceEnrollState" >> tmp_apk/$authCtrlclassfile
+
+    echo "Compiling ${apkname}..."
+    if [[ $debug == false ]]; then
+        apkeditor b -i tmp_apk > /dev/null 2>&1
+    elif [[ $debug == true ]]; then
+        apkeditor b -i tmp_apk
+    fi
+	unzip tmp_apk_out.apk 'classes*.dex' -d tmp_apk > /dev/null 2>&1
+
+	cd tmp_apk
+    echo "Zipping classes..."
+	zip -qr0 -t 07302003 $dirnow/tmp.apk classes*
+	cd $dirnow
+    echo "Zipaligning ${apkname}..."
+	zipalign -f 4 tmp.apk $apkname
+	rm -rf tmp_apk_out.apk tmp.apk tmp_apk
+    echo "Done!"
+}
+
+usage() {
+    echo "Usage: $0 {-j|-a}"
+    echo " -j [jar file]   Patch services.jar"
+    echo " -a [apk file]   Patch SystemUI.apk"
+    echo ""
+    echo 'Create a file named ".debug" in current dir to show all logs'
+    exit 1
+}
+
+if [[ $1 == "" ]]; then
+    usage
+fi
+while getopts "ja" args; do
+   case "$args" in
+      j) patchservices $2;;
+      a) patchsysui $2;;
+      *) usage;;
+   esac
+done
