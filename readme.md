@@ -1,6 +1,6 @@
 # OPlusFace Unlock Guide
 
-Follow this guide below for manual patch or follow [this guide](https://github.com/ryanistr/OPlusFace/blob/main/auto.md) for auto patch with script by Danda420
+Follow this guide below for manual patch or follow or follow [this guide](AUTOPATCH/README.md) for auto patch with script by Danda420
 This will guide you to patch precompiled services.jar to implement Motorola Face Unlock
 
 Credits me or this repo when use or helped your work. Days were spent figuring out and debugging crashes for this method respect my works.
