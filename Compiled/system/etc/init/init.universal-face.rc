@@ -1,5 +1,0 @@
-
-# add for face data
-on post-fs-data
-    mkdir /data/system/face_unlock_data 0700 system system
-    restorecon /data/system/face_unlock_data
