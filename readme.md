@@ -441,8 +441,137 @@ Search for the following methods in `FaceProvider` class and replace the **entir
     return-void
 .end method
 ```
+### 3. Extra fix (additional)
+Note: Only apply this specific patch if you're experiencing log spam issues caused by an NPE specifically around FaceStartUserClient.
 
-### 3. Add Classes and Repack
+Find this specific method inside `FaceStartUserClient` and replace `startHalOperation()V` with this one
+```smali
+.method protected startHalOperation()V
+    .registers 8
+
+    .line 61
+    const-string v0, "FaceStartUserClient"
+
+    :try_start_2
+    invoke-virtual {p0}, Lcom/android/server/biometrics/sensors/face/aidl/FaceStartUserClient;->getFreshDaemon()Ljava/lang/Object;
+
+    move-result-object v1
+
+    if-eqz v1, :cond_null
+
+    check-cast v1, Landroid/hardware/biometrics/face/IFace;
+
+    .line 62
+    .local v1, "hal":Landroid/hardware/biometrics/face/IFace;
+    invoke-interface {v1}, Landroid/hardware/biometrics/face/IFace;->getInterfaceVersion()I
+
+    move-result v2
+
+    .line 63
+    .local v2, "version":I
+    invoke-virtual {p0}, Lcom/android/server/biometrics/sensors/face/aidl/FaceStartUserClient;->getSensorId()I
+
+    move-result v3
+
+    .line 64
+    invoke-virtual {p0}, Lcom/android/server/biometrics/sensors/face/aidl/FaceStartUserClient;->getTargetUserId()I
+
+    move-result v4
+
+    iget-object v5, p0, Lcom/android/server/biometrics/sensors/face/aidl/FaceStartUserClient;->mSessionCallback:Landroid/hardware/biometrics/face/ISessionCallback;
+
+    .line 63
+    invoke-interface {v1, v3, v4, v5}, Landroid/hardware/biometrics/face/IFace;->createSession(IILandroid/hardware/biometrics/face/ISessionCallback;)Landroid/hardware/biometrics/face/ISession;
+
+    move-result-object v3
+
+    .line 68
+    .local v3, "newSession":Landroid/hardware/biometrics/face/ISession;
+    if-eqz v3, :cond_24
+
+    .line 69
+    invoke-interface {v3}, Landroid/hardware/biometrics/face/ISession;->asBinder()Landroid/os/IBinder;
+
+    move-result-object v4
+
+    invoke-static {v4}, Landroid/os/Binder;->allowBlocking(Landroid/os/IBinder;)Landroid/os/IBinder;
+
+    goto :goto_2a
+
+    .line 71
+    :cond_24
+    const-string/jumbo v4, "newSession is null"
+
+    invoke-static {v0, v4}, Landroid/util/Slog;->e(Ljava/lang/String;Ljava/lang/String;)I
+
+    .line 74
+    :goto_2a
+    iget-object v4, p0, Lcom/android/server/biometrics/sensors/face/aidl/FaceStartUserClient;->mUserStartedCallback:Lcom/android/server/biometrics/sensors/StartUserClient$UserStartedCallback;
+
+    invoke-virtual {p0}, Lcom/android/server/biometrics/sensors/face/aidl/FaceStartUserClient;->getTargetUserId()I
+
+    move-result v5
+
+    invoke-interface {v4, v5, v3, v2}, Lcom/android/server/biometrics/sensors/StartUserClient$UserStartedCallback;->onUserStarted(ILjava/lang/Object;I)V
+
+    .line 75
+    invoke-virtual {p0}, Lcom/android/server/biometrics/sensors/face/aidl/FaceStartUserClient;->getCallback()Lcom/android/server/biometrics/sensors/ClientMonitorCallback;
+
+    move-result-object v4
+
+    const/4 v5, 0x1
+
+    invoke-interface {v4, p0, v5}, Lcom/android/server/biometrics/sensors/ClientMonitorCallback;->onClientFinished(Lcom/android/server/biometrics/sensors/BaseClientMonitor;Z)V
+    :try_end_3b
+    .catch Ljava/lang/Exception; {:try_start_2 .. :try_end_3b} :catch_3c
+
+    .line 83
+    .end local v1  # "hal":Landroid/hardware/biometrics/face/IFace;
+    .end local v2  # "version":I
+    .end local v3  # "newSession":Landroid/hardware/biometrics/face/ISession;
+    goto :goto_4a
+
+    :cond_null
+    iget-object v1, p0, Lcom/android/server/biometrics/sensors/face/aidl/FaceStartUserClient;->mUserStartedCallback:Lcom/android/server/biometrics/sensors/StartUserClient$UserStartedCallback;
+    invoke-virtual {p0}, Lcom/android/server/biometrics/sensors/face/aidl/FaceStartUserClient;->getTargetUserId()I
+    move-result v2
+    const/4 v3, 0x0
+    const/4 v4, 0x0
+    invoke-interface {v1, v2, v3, v4}, Lcom/android/server/biometrics/sensors/StartUserClient$UserStartedCallback;->onUserStarted(ILjava/lang/Object;I)V
+
+    invoke-virtual {p0}, Lcom/android/server/biometrics/sensors/face/aidl/FaceStartUserClient;->getCallback()Lcom/android/server/biometrics/sensors/ClientMonitorCallback;
+    move-result-object v1
+    const/4 v2, 0x1
+    invoke-interface {v1, p0, v2}, Lcom/android/server/biometrics/sensors/ClientMonitorCallback;->onClientFinished(Lcom/android/server/biometrics/sensors/BaseClientMonitor;Z)V
+    goto :goto_4a
+
+    .line 79
+    :catch_3c
+    move-exception v1
+
+    .line 81
+    .local v1, "e":Ljava/lang/Exception;
+    const-string v2, "Remote exception"
+
+    invoke-static {v0, v2, v1}, Landroid/util/Slog;->e(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)I
+
+    .line 82
+    invoke-virtual {p0}, Lcom/android/server/biometrics/sensors/face/aidl/FaceStartUserClient;->getCallback()Lcom/android/server/biometrics/sensors/ClientMonitorCallback;
+
+    move-result-object v0
+
+    const/4 v2, 0x0
+
+    invoke-interface {v0, p0, v2}, Lcom/android/server/biometrics/sensors/ClientMonitorCallback;->onClientFinished(Lcom/android/server/biometrics/sensors/BaseClientMonitor;Z)V
+
+    .line 84
+    .end local v1  # "e":Ljava/lang/Exception;
+    :goto_4a
+    return-void
+.end method
+```
+
+### 4. Add Classes and Repack
 
 * Add the `classes.dex` of the implementation to `services.jar`.
 * **Rename Strategy:** If your last dex is `classes4.dex`, name the new one `classes5.dex` (increment accordingly).
