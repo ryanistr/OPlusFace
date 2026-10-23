@@ -1,3 +1,8 @@
+> [!WARNING]
+> **This repository is no longer maintained as of October 23, 2026, and will be archived in the future.**
+>
+> The current implementation is outdated and janky. A newer implementation is in progress and will be made public at a later date. Until then, this repository is provided for reference only; do not expect further maintenance or updates.
+
 # OPlusFace Unlock Guide
 
 Follow this guide below for manual patch or follow or follow [this guide](AUTOPATCH/README.md) for auto patch with script by Danda420
